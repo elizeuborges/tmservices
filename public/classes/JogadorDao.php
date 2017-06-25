@@ -1,39 +1,50 @@
 <?php
 class JogadorDao extends Mapper
 {	  
+
+	public function __construct($container)
+    {   
+    	$this->db = $container->db;     
+        $this->logger = $container->logger;
+    }
     
-	public function getJogadorPelaIdade($idade){
+	public function getJogadorPelaIdade($idade)
+	{
 		$sql = "SELECT * from jogador where idade= '$idade' order by idade desc";        
         $stmt = $this->db->query($sql);
         $jogador = '';
-        if($row = $stmt->fetch()){
+        if($row = $stmt->fetch())
+        {
         	$jogador = new Jogador($row);	
         }
         return $jogador;
 	}
 
-    public function getIdadesSalvas($id_tm) {
-        $sql = "SELECT idade from jogador where id_tm = '$id_tm' ";                    
+    public function getIdadesSalvas($id_tm) 
+    {
+        $sql = "SELECT idade from jogador where id_tm = '$id_tm' order by idade desc";                    
         $stmt = $this->db->query($sql);        
 		return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    public function getJogadores($params) {
+    public function getJogadores($params) 
+    {
         $sql = "SELECT * from jogador where 1=1 ";        
-                
-        foreach ($params as $key => $value) {
+       	foreach ($params as $key => $value) 
+        {
 			$sql.= " and $key = '$value' ";
 		}      
-        
         $stmt = $this->db->query($sql);
         $results = [];
-        while($row = $stmt->fetch()) {
+        while($row = $stmt->fetch()) 
+        {
             $results[] = new Jogador($row);
         }
         return $results;
     }
 			
-	public function salvar(Jogador $jogador){
+	public function salvar(Jogador $jogador)
+	{
 		$sql = "insert into jogador (
 				id, efternavn, nationalitet, alder, stamina,
 				strafpoint, availability, injury, fornavn,
@@ -110,19 +121,24 @@ class JogadorDao extends Mapper
 			"no" => $jogador->no ,
 			"name" => $jogador->name,
 			"country" => $jogador->country
-        ]);	
-		
-		if(!$result){
-			
-		}
-						
+        ]);									
 	}
     
-    public function jogadorNaoFoiSalvoEssaSemana(Jogador $jogador) {
+    public function jogadorJaFoiSalvoEssaSemana(Jogador $jogador) 
+    {
         $sql = "SELECT count(*) from jogador j where j.id_tm = '$jogador->id_tm' and j.idade = '$jogador->idade'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
-        return $stmt->fetchColumn() == 0;
+        return $stmt->fetchColumn() > 0;
+    }
+
+    public function deletar(Jogador $jogador)
+    {
+    	$this->logger->info("Deletando habilidades de $jogador->idade do jogador com id $jogador->id_tm");
+    	$sql = "DELETE FROM jogador where id_tm = '$jogador->id_tm' and idade = '$jogador->idade'";
+    	$stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $this->logger->info("Jogador deletado com sucesso");
     }
 
 }			
